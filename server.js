@@ -32,8 +32,9 @@ wss.on('connection', ws => {
         switch (data.action) {
             case 'createLobby':
                 const lobbyCode = generateLobbyCode();
+                const size = data.size || 3; // Default to 3x3 if size is not provided
                 lobbies[lobbyCode] = { players: [ws], gameStarted: false };
-                puzzles[lobbyCode] = { puzzle: [], size: 3, tilesize: 100, completed: false };
+                puzzles[lobbyCode] = { puzzle: [], size: size, tilesize: 100, completed: false };
                 ws.send(JSON.stringify({ action: 'lobbyCreated', code: lobbyCode }));
                 currentLobby = lobbyCode;
                 break;

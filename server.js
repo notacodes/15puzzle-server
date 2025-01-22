@@ -32,10 +32,10 @@ wss.on('connection', ws => {
         switch (data.action) {
             case 'createLobby':
                 const lobbyCode = generateLobbyCode();
-                const size = data.size || 3; // Default to 3x3 if size is not provided
+                const size = data.size || 3;
                 lobbies[lobbyCode] = { players: [ws], gameStarted: false };
                 puzzles[lobbyCode] = { puzzle: [], size: size, tilesize: 100, completed: false };
-                ws.send(JSON.stringify({ action: 'lobbyCreated', code: lobbyCode }));
+                ws.send(JSON.stringify({ action: 'lobbyCreated', code: lobbyCode, size: size }));
                 currentLobby = lobbyCode;
                 break;
 
@@ -46,7 +46,7 @@ wss.on('connection', ws => {
                     } else {
                         lobbies[data.code].players.push(ws);
                         currentLobby = data.code;
-                        ws.send(JSON.stringify({ action: 'lobbyJoined', code: data.code }));
+                        ws.send(JSON.stringify({ action: 'lobbyJoined', code: data.code, size: puzzles[data.code].size }));
                     }
                 } else {
                     ws.send(JSON.stringify({ action: 'lobbyFull', message: 'Lobby ist voll oder existiert nicht.' }));

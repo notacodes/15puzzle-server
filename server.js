@@ -54,7 +54,7 @@ wss.on('connection', ws => {
                 break;
 
             case 'startGame':
-                if (lobbies[currentLobby] && lobbies[currentLobby].players.length === 2 && !lobbies[currentLobby].gameStarted && !puzzles[currentLobby].completed) {
+                if (currentLobby && lobbies[currentLobby] && lobbies[currentLobby].players.length === 2 && !lobbies[currentLobby].gameStarted && !puzzles[currentLobby].completed) {
                     if (lobbies[currentLobby].players[0] === ws) { // Check if the player is the lobby creator
                         lobbies[currentLobby].gameStarted = true;
 
@@ -70,7 +70,7 @@ wss.on('connection', ws => {
                 break;
 
             case 'move':
-                if (lobbies[currentLobby] && lobbies[currentLobby].gameStarted) {
+                if (currentLobby && lobbies[currentLobby] && lobbies[currentLobby].gameStarted) {
                     puzzles[currentLobby].puzzle = data.puzzle;
                     syncPuzzleToPlayers(currentLobby);
                     checkIfSolved(currentLobby);
@@ -78,10 +78,12 @@ wss.on('connection', ws => {
                 break;
 
             case 'puzzleSolved':
-                puzzles[currentLobby].completed = true;
-                lobbies[currentLobby].players.forEach(player => {
-                    player.send(JSON.stringify({ action: 'gameOver' }));
-                });
+                if (currentLobby) {
+                    puzzles[currentLobby].completed = true;
+                    lobbies[currentLobby].players.forEach(player => {
+                        player.send(JSON.stringify({ action: 'gameOver' }));
+                    });
+                }
                 break;
         }
     });
@@ -98,6 +100,10 @@ wss.on('connection', ws => {
                 syncPuzzleToPlayers(currentLobby);
             }
         }
+    });
+
+    ws.on('error', (error) => {
+        console.error('WebSocket error:', error);
     });
 });
 

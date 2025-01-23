@@ -133,6 +133,8 @@ wss.on('connection', ws => {
                 puzzles[currentLobby].completed = false;
                 lobbies[currentLobby].gameStarted = false;
                 puzzles[currentLobby].puzzle = [];
+                console.log(puzzles[currentLobby].tilesize)
+                console.log(puzzles[currentLobby].size)
 
                 break;
         }
@@ -157,7 +159,9 @@ function generatePuzzle(currentLobby) {
     if (!puzzles[currentLobby]) {
         throw new Error(`Puzzle data for lobby ${currentLobby} not found.`);
     }
-
+console.log('generatePuzzle');
+    console.log(size)
+    console.log(tilesize)
     let size = puzzles[currentLobby].size;
     let tilesize = puzzles[currentLobby].tilesize;
     createPuzzle(size, tilesize, currentLobby);

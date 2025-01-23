@@ -10,7 +10,7 @@ const server = http.createServer((req, res) => {
         res.end('Not Found');
     }
 });
-
+//test
 const wss = new WebSocket.Server({ server });
 
 let lobbies = {};
@@ -66,7 +66,7 @@ wss.on('connection', ws => {
                     }));
                     return;
                 }
-                if (lobbies[data.code] && lobbies[data.code].players.length < 2) {
+                if (lobbies[data.code] && lobbies[data.code].players.length < 10) {
                     const existingPlayers = lobbies[data.code].players;
 
                     if (existingPlayers.some(p => p.name === data.playerName)) {
@@ -110,7 +110,7 @@ wss.on('connection', ws => {
                 const currentLobby = ws.lobbyCode;
                 if (
                     lobbies[currentLobby] &&
-                    lobbies[currentLobby].players.length === 2 &&
+                    lobbies[currentLobby].players.length >= 10 && lobbies[currentLobby].players.length < 2 &&
                     !lobbies[currentLobby].gameStarted &&
                     !puzzles[currentLobby].completed
                 ) {

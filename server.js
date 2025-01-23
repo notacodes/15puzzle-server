@@ -48,7 +48,7 @@ wss.on('connection', ws => {
                     completed: false
                 };
 
-                ws.lobbyCode = lobbyCode; // Speichere den Lobby-Code im WebSocket
+                ws.lobbyCode = lobbyCode;
 
                 ws.send(JSON.stringify({
                     action: 'lobbyCreated',

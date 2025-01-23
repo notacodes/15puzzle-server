@@ -130,7 +130,9 @@ wss.on('connection', ws => {
                 lobbies[currentLobby].players.forEach(player => {
                     player.socket.send(JSON.stringify({ action: 'gameOver' }));
                 });
+                puzzles[currentLobby].completed = false;
                 lobbies[currentLobby].gameStarted = false;
+
                 break;
         }
     });

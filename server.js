@@ -112,6 +112,8 @@ wss.on('connection', ws => {
                     lobbies[currentLobby].players.forEach(player => {
                         player.socket.send(JSON.stringify({ action: 'gameStarted', puzzle }));
                     });
+                }else{
+                    console.log('Ka');
                 }
                 break;
 

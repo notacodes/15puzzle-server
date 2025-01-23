@@ -68,7 +68,7 @@ wss.on('connection', ws => {
                     if (existingPlayers.some(p => p.name === data.playerName)) {
                         ws.send(JSON.stringify({
                             action: 'error',
-                            message: 'Ein Spieler mit diesem Namen existiert bereits in der Lobby.'
+                            message: 'A player with this name already exists in the lobby.'
                         }));
                         return;
                     }
@@ -79,7 +79,7 @@ wss.on('connection', ws => {
                         name: data.playerName
                     });
 
-                    currentLobby = data.code;
+                    currentLobby = data.code; // Set currentLobby for the joining player
 
                     existingPlayers.forEach(player => {
                         player.socket.send(JSON.stringify({
@@ -97,7 +97,7 @@ wss.on('connection', ws => {
                 } else {
                     ws.send(JSON.stringify({
                         action: 'lobbyFull',
-                        message: 'Lobby ist voll oder existiert nicht.'
+                        message: 'Lobby is full or does not exist.'
                     }));
                 }
                 break;

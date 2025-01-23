@@ -127,7 +127,12 @@ wss.on('connection', ws => {
                 console.log('Puzzle solved');
                 puzzles[currentLobby].completed = true;
                 lobbies[currentLobby].players.forEach(player => {
-                    player.socket.send(JSON.stringify({ action: 'gameOver' }));
+                    console.log('Player object:', player); // Add this line to log the player object
+                    if (player.socket && typeof player.socket.send === 'function') {
+                        player.socket.send(JSON.stringify({ action: 'gameOver' }));
+                    } else {
+                        console.error('Player socket is not defined or send is not a function');
+                    }
                 });
                 break;
         }

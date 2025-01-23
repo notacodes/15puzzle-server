@@ -81,7 +81,6 @@ wss.on('connection', ws => {
 
                     currentLobby = data.code;
 
-
                     existingPlayers.forEach(player => {
                         player.socket.send(JSON.stringify({
                             action: 'updatePlayerList',
@@ -138,7 +137,7 @@ wss.on('connection', ws => {
 
                 break;
             case 'leaveLobby':
-                handleLeaveLobby(ws, data.code);
+                handleLeaveLobby(ws, data.code, data.playerName);
                 break;
         }
     });
@@ -265,9 +264,10 @@ function countCorrectTiles(currentLobby) {
 const PORT = process.env.PORT || 8080;
 server.listen(PORT, () => console.log(`Server läuft auf Port ${PORT}`));
 
-function handleLeaveLobby(socket, lobbyCode) {
+function handleLeaveLobby(socket, lobbyCode, playerName) {
+    console.log('Player left lobby.');
     if (lobbies[lobbyCode]) {
-        lobbies[lobbyCode].players = lobbies[lobbyCode].players.filter(player => player.socket !== socket);
+        lobbies[lobbyCode].players = lobbies[lobbyCode].players.filter(player => player.socket !== socket && player.name !== playerName);
         if (lobbies[lobbyCode].players.length === 0) {
             delete lobbies[lobbyCode];
             delete puzzles[lobbyCode];

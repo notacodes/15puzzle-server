@@ -66,6 +66,7 @@ wss.on('connection', ws => {
                     ws.send(JSON.stringify({
                         action: 'lobbyNotFound'
                     }));
+                    removePlayerFromAllLobbies(ws);
                     return;
                 }
                 if (lobbies[data.code] && lobbies[data.code].players.length < 2) {
@@ -309,5 +310,25 @@ function handleLeaveLobby(socket, lobbyCode, playerName) {
 
     // Bestätigung an den Spieler, der die Lobby verlässt
     socket.send(JSON.stringify({ action: 'leftLobby' }));
+}
+function removePlayerFromAllLobbies(socket) {
+    for (const lobbyCode in lobbies) {
+        const lobby = lobbies[lobbyCode];
+        lobby.players = lobby.players.filter(player => player.socket !== socket);
+
+        if (lobby.players.length === 0) {
+            delete lobbies[lobbyCode];
+            delete puzzles[lobbyCode];
+            console.log(`Lobby ${lobbyCode} deleted.`);
+        } else {
+            lobby.players.forEach(player => {
+                player.socket.send(JSON.stringify({
+                    action: 'updatePlayerList',
+                    players: lobby.players.map(p => ({ name: p.name }))
+                }));
+            });
+        }
+    }
+    socket.send(JSON.stringify({ action: 'removedFromAllLobbies' }));
 }
 

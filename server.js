@@ -1,6 +1,7 @@
 const WebSocket = require('ws');
 const http = require('http');
 
+// HTTP-Server erstellen
 const server = http.createServer((req, res) => {
     if (req.method === 'GET' && req.url === '/') {
         res.writeHead(200, { 'Content-Type': 'text/plain' });
@@ -11,6 +12,7 @@ const server = http.createServer((req, res) => {
     }
 });
 
+// WebSocket-Server erstellen
 const wss = new WebSocket.Server({ server });
 
 let lobbies = {};
@@ -48,7 +50,7 @@ wss.on('connection', ws => {
                     completed: false
                 };
 
-                ws.lobbyCode = lobbyCode;
+                ws.lobbyCode = lobbyCode; // Speichere den Lobby-Code im WebSocket
 
                 ws.send(JSON.stringify({
                     action: 'lobbyCreated',
@@ -64,7 +66,6 @@ wss.on('connection', ws => {
                     ws.send(JSON.stringify({
                         action: 'lobbyNotFound'
                     }));
-                    removePlayerFromAllLobbies(ws);
                     return;
                 }
                 if (lobbies[data.code] && lobbies[data.code].players.length < 2) {
@@ -84,7 +85,7 @@ wss.on('connection', ws => {
                         lobby: data.code // Speichere Lobby-Referenz
                     });
 
-                    ws.lobbyCode = data.code; // Setze den Lobby-Code im WebSocket
+                    ws.lobbyCode = data.code;
 
                     existingPlayers.forEach(player => {
                         player.socket.send(JSON.stringify({

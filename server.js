@@ -54,23 +54,19 @@ wss.on('connection', ws => {
                 break;
 
             case 'startGame':
-                if (currentLobby && lobbies[currentLobby] && lobbies[currentLobby].players.length === 2 && !lobbies[currentLobby].gameStarted && !puzzles[currentLobby].completed) {
-                    if (lobbies[currentLobby].players[0] === ws) { // Check if the player is the lobby creator
-                        lobbies[currentLobby].gameStarted = true;
+                if (lobbies[currentLobby] && lobbies[currentLobby].players.length === 2 && !lobbies[currentLobby].gameStarted && !puzzles[currentLobby].completed) {
+                    lobbies[currentLobby].gameStarted = true;
 
-                        const puzzle = generatePuzzle(currentLobby);
+                    const puzzle = generatePuzzle(currentLobby);
 
-                        lobbies[currentLobby].players.forEach(player => {
-                            player.send(JSON.stringify({ action: 'gameStarted', puzzle }));
-                        });
-                    } else {
-                        ws.send(JSON.stringify({ action: 'error', message: 'Only the lobby creator can start the game.' }));
-                    }
+                    lobbies[currentLobby].players.forEach(player => {
+                        player.send(JSON.stringify({ action: 'gameStarted', puzzle }));
+                    });
                 }
                 break;
 
             case 'move':
-                if (currentLobby && lobbies[currentLobby] && lobbies[currentLobby].gameStarted) {
+                if (lobbies[currentLobby] && lobbies[currentLobby].gameStarted) {
                     puzzles[currentLobby].puzzle = data.puzzle;
                     syncPuzzleToPlayers(currentLobby);
                     checkIfSolved(currentLobby);
@@ -78,12 +74,10 @@ wss.on('connection', ws => {
                 break;
 
             case 'puzzleSolved':
-                if (currentLobby) {
-                    puzzles[currentLobby].completed = true;
-                    lobbies[currentLobby].players.forEach(player => {
-                        player.send(JSON.stringify({ action: 'gameOver' }));
-                    });
-                }
+                puzzles[currentLobby].completed = true;
+                lobbies[currentLobby].players.forEach(player => {
+                    player.send(JSON.stringify({ action: 'gameOver' }));
+                });
                 break;
         }
     });
@@ -100,10 +94,6 @@ wss.on('connection', ws => {
                 syncPuzzleToPlayers(currentLobby);
             }
         }
-    });
-
-    ws.on('error', (error) => {
-        console.error('WebSocket error:', error);
     });
 });
 

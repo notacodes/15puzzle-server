@@ -137,6 +137,9 @@ wss.on('connection', ws => {
                 console.log(puzzles[currentLobby].size)
 
                 break;
+            case 'leaveLobby':
+                handleLeaveLobby(socket, data.code);
+                break;
         }
     });
 
@@ -261,3 +264,18 @@ function countCorrectTiles(currentLobby) {
 // Port für Render oder lokalen Server
 const PORT = process.env.PORT || 8080;
 server.listen(PORT, () => console.log(`Server läuft auf Port ${PORT}`));
+
+function handleLeaveLobby(socket, lobbyCode) {
+    if (lobbies[lobbyCode]) {
+        lobbies[lobbyCode].players = lobbies[lobbyCode].players.filter(player => player.socket !== socket);
+        if (lobbies[lobbyCode].players.length === 0) {
+            delete lobbies[lobbyCode];
+            delete puzzles[lobbyCode];
+        } else {
+            lobbies[lobbyCode].players.forEach(player => {
+                player.socket.send(JSON.stringify({ action: 'updatePlayerList', players: lobbies[lobbyCode].players.map(p => ({ name: p.name })) }));
+            });
+        }
+        socket.send(JSON.stringify({ action: 'leftLobby' }));
+    }
+}

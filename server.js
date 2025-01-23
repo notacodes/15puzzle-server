@@ -219,7 +219,7 @@ function validateEmptyPuzzle(currentLobby) {
 function syncPuzzleToPlayers(lobbyCode) {
     const puzzle = puzzles[lobbyCode].puzzle;
     lobbies[lobbyCode].players.forEach(player => {
-        player.send(JSON.stringify({ action: 'updatePuzzle', puzzle }));
+        player.socket.send(JSON.stringify({ action: 'updatePuzzle', puzzle }));
     });
 }
 

@@ -12,7 +12,6 @@ const server = http.createServer((req, res) => {
     }
 });
 
-// WebSocket-Server erstellen
 const wss = new WebSocket.Server({ server });
 
 let lobbies = {};

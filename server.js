@@ -110,7 +110,7 @@ wss.on('connection', ws => {
                     const puzzle = generatePuzzle(currentLobby);
 
                     lobbies[currentLobby].players.forEach(player => {
-                        player.send(JSON.stringify({ action: 'gameStarted', puzzle }));
+                        player.socket.send(JSON.stringify({ action: 'gameStarted', puzzle }));
                     });
                 }
                 break;

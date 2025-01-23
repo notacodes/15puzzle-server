@@ -138,7 +138,7 @@ wss.on('connection', ws => {
 
                 break;
             case 'leaveLobby':
-                handleLeaveLobby(socket, data.code);
+                handleLeaveLobby(ws, data.code);
                 break;
         }
     });

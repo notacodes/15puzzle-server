@@ -263,27 +263,46 @@ const PORT = process.env.PORT || 8080;
 server.listen(PORT, () => console.log(`Server läuft auf Port ${PORT}`));
 
 function handleLeaveLobby(socket, lobbyCode, playerName) {
-    console.log('Attempting to remove player from lobby.');
-    if (lobbies[lobbyCode]) {
-        console.log(`Lobby ${lobbyCode} found.`);
-        const initialPlayerCount = lobbies[lobbyCode].players.length;
-        lobbies[lobbyCode].players = lobbies[lobbyCode].players.filter(player => player.socket !== socket);
-        const finalPlayerCount = lobbies[lobbyCode].players.length;
+    console.log(`Player ${playerName} attempting to leave lobby ${lobbyCode}.`);
 
-        console.log(`Initial player count: ${initialPlayerCount}, Final player count: ${finalPlayerCount}`);
+    if (!lobbies[lobbyCode]) {
+        console.log(`Lobby ${lobbyCode} not found.`);
+        return;
+    }
 
-        if (finalPlayerCount === 0) {
-            delete lobbies[lobbyCode];
-            delete puzzles[lobbyCode];
-            console.log(`Lobby ${lobbyCode} deleted.`);
-        } else {
-            lobbies[lobbyCode].players.forEach(player => {
-                player.socket.send(JSON.stringify({ action: 'updatePlayerList', players: lobbies[lobbyCode].players.map(p => ({ name: p.name })) }));
-            });
+    const lobby = lobbies[lobbyCode];
+    const players = lobby.players;
+
+    // Entferne den Spieler aus der Lobby
+    lobby.players = players.filter(player => player.socket !== socket);
+
+    if (lobby.players.length === 0) {
+        // Wenn die Lobby leer ist, löschen
+        delete lobbies[lobbyCode];
+        delete puzzles[lobbyCode];
+        console.log(`Lobby ${lobbyCode} deleted.`);
+    } else {
+        // Überprüfen, ob der Host gegangen ist
+        if (lobby.host === playerName) {
+            console.log(`${playerName} was the host. Selecting a new host.`);
+            const newHost = lobby.players[0];
+            lobby.host = newHost.name; // Der erste verbleibende Spieler wird neuer Host
+
+            // Informiere den neuen Host
+            newHost.socket.send(JSON.stringify({ action: 'newHost' }));
         }
 
-        socket.send(JSON.stringify({ action: 'leftLobby' }));
-    } else {
-        console.log(`Lobby ${lobbyCode} not found.`);
+        // Aktualisiere die Spielerliste für alle verbleibenden Spieler
+        lobby.players.forEach(player => {
+            player.socket.send(JSON.stringify({
+                action: 'updatePlayerList',
+                players: lobby.players.map(p => ({ name: p.name })),
+                host: lobby.host,
+            }));
+        });
     }
+
+    // Bestätigung an den Spieler, der die Lobby verlässt
+    socket.send(JSON.stringify({ action: 'leftLobby' }));
 }
+

@@ -116,9 +116,8 @@ wss.on('connection', ws => {
                     !puzzles[currentLobby].completed
                 ) {
                     lobbies[currentLobby].gameStarted = true;
-
                     const puzzle = generatePuzzle(currentLobby);
-
+                    console.log('Game....');
                     lobbies[currentLobby].players.forEach(player => {
                         player.socket.send(JSON.stringify({ action: 'gameStarted', puzzle }));
                     });

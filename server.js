@@ -33,23 +33,73 @@ wss.on('connection', ws => {
             case 'createLobby':
                 const lobbyCode = generateLobbyCode();
                 const size = data.size || 3;
-                lobbies[lobbyCode] = { players: [ws], gameStarted: false };
-                puzzles[lobbyCode] = { puzzle: [], size: size, tilesize: 100, completed: false };
-                ws.send(JSON.stringify({ action: 'lobbyCreated', code: lobbyCode, size: size }));
+                const playerName = data.playerName;
+
+                lobbies[lobbyCode] = {
+                    players: [{
+                        socket: ws,
+                        name: playerName
+                    }],
+                    gameStarted: false
+                };
+
+                puzzles[lobbyCode] = {
+                    puzzle: [],
+                    size: size,
+                    tilesize: 100,
+                    completed: false
+                };
+
+                ws.send(JSON.stringify({
+                    action: 'lobbyCreated',
+                    code: lobbyCode,
+                    size: size,
+                    players: lobbies[lobbyCode].players.map(p => ({ name: p.name }))
+                }));
+
                 currentLobby = lobbyCode;
                 break;
 
             case 'joinLobby':
                 if (lobbies[data.code] && lobbies[data.code].players.length < 2) {
-                    if (lobbies[data.code].players.includes(ws)) {
-                        ws.send(JSON.stringify({ action: 'error', message: 'Cannot join your own lobby.' }));
-                    } else {
-                        lobbies[data.code].players.push(ws);
-                        currentLobby = data.code;
-                        ws.send(JSON.stringify({ action: 'lobbyJoined', code: data.code, size: puzzles[data.code].size }));
+                    const existingPlayers = lobbies[data.code].players;
+
+                    // Check if player with this name already exists
+                    if (existingPlayers.some(p => p.name === data.playerName)) {
+                        ws.send(JSON.stringify({
+                            action: 'error',
+                            message: 'Ein Spieler mit diesem Namen existiert bereits in der Lobby.'
+                        }));
+                        return;
                     }
+
+                    // Add new player
+                    existingPlayers.push({
+                        socket: ws,
+                        name: data.playerName
+                    });
+
+                    currentLobby = data.code;
+
+                    // Broadcast updated player list to all players in lobby
+                    existingPlayers.forEach(player => {
+                        player.socket.send(JSON.stringify({
+                            action: 'updatePlayerList',
+                            players: existingPlayers.map(p => ({ name: p.name }))
+                        }));
+                    });
+
+                    ws.send(JSON.stringify({
+                        action: 'lobbyJoined',
+                        code: data.code,
+                        size: puzzles[data.code].size,
+                        players: existingPlayers.map(p => ({ name: p.name }))
+                    }));
                 } else {
-                    ws.send(JSON.stringify({ action: 'lobbyFull', message: 'Lobby ist voll oder existiert nicht.' }));
+                    ws.send(JSON.stringify({
+                        action: 'lobbyFull',
+                        message: 'Lobby ist voll oder existiert nicht.'
+                    }));
                 }
                 break;
 

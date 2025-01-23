@@ -81,7 +81,7 @@ wss.on('connection', ws => {
 
                     currentLobby = data.code;
 
-                    // Broadcast updated player list to all players in lobby
+
                     existingPlayers.forEach(player => {
                         player.socket.send(JSON.stringify({
                             action: 'updatePlayerList',
@@ -160,10 +160,10 @@ function generatePuzzle(currentLobby) {
         throw new Error(`Puzzle data for lobby ${currentLobby} not found.`);
     }
 console.log('generatePuzzle');
-    console.log(size)
-    console.log(tilesize)
     let size = puzzles[currentLobby].size;
     let tilesize = puzzles[currentLobby].tilesize;
+    console.log(size)
+    console.log(tilesize)
     createPuzzle(size, tilesize, currentLobby);
 
     do {

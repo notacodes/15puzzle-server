@@ -107,6 +107,7 @@ wss.on('connection', ws => {
                 break;
 
             case 'startGame':
+                console.log('Starting game...');
                 const currentLobby = ws.lobbyCode;
                 if (
                     lobbies[currentLobby] &&

@@ -111,7 +111,7 @@ wss.on('connection', ws => {
                 const currentLobby = ws.lobbyCode;
                 if (
                     lobbies[currentLobby] &&
-                    lobbies[currentLobby].players.length >= 10 && lobbies[currentLobby].players.length < 2 &&
+                    lobbies[currentLobby].players.length >= 2 && lobbies[currentLobby].players.length < 10 &&
                     !lobbies[currentLobby].gameStarted &&
                     !puzzles[currentLobby].completed
                 ) {

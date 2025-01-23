@@ -265,17 +265,26 @@ const PORT = process.env.PORT || 8080;
 server.listen(PORT, () => console.log(`Server läuft auf Port ${PORT}`));
 
 function handleLeaveLobby(socket, lobbyCode, playerName) {
-    console.log('Player left lobby.');
+    console.log('Attempting to remove player from lobby.');
     if (lobbies[lobbyCode]) {
+        console.log(`Lobby ${lobbyCode} found.`);
+        const initialPlayerCount = lobbies[lobbyCode].players.length;
         lobbies[lobbyCode].players = lobbies[lobbyCode].players.filter(player => player.socket !== socket && player.name !== playerName);
-        if (lobbies[lobbyCode].players.length === 0) {
+        const finalPlayerCount = lobbies[lobbyCode].players.length;
+
+        console.log(`Initial player count: ${initialPlayerCount}, Final player count: ${finalPlayerCount}`);
+
+        if (finalPlayerCount === 0) {
             delete lobbies[lobbyCode];
             delete puzzles[lobbyCode];
+            console.log(`Lobby ${lobbyCode} deleted.`);
         } else {
             lobbies[lobbyCode].players.forEach(player => {
                 player.socket.send(JSON.stringify({ action: 'updatePlayerList', players: lobbies[lobbyCode].players.map(p => ({ name: p.name })) }));
             });
         }
         socket.send(JSON.stringify({ action: 'leftLobby' }));
+    } else {
+        console.log(`Lobby ${lobbyCode} not found.`);
     }
 }

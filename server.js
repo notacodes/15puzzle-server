@@ -23,7 +23,6 @@ function generateLobbyCode() {
 }
 
 wss.on('connection', ws => {
-    let currentLobby = null;
     console.log('Player connected.');
 
     ws.on('message', message => {
@@ -38,7 +37,8 @@ wss.on('connection', ws => {
                 lobbies[lobbyCode] = {
                     players: [{
                         socket: ws,
-                        name: playerName
+                        name: playerName,
+                        lobby: lobbyCode // Speichere Lobby-Code im Spielerobjekt
                     }],
                     gameStarted: false
                 };
@@ -50,6 +50,8 @@ wss.on('connection', ws => {
                     completed: false
                 };
 
+                ws.lobbyCode = lobbyCode; // Speichere den Lobby-Code im WebSocket
+
                 ws.send(JSON.stringify({
                     action: 'lobbyCreated',
                     code: lobbyCode,
@@ -57,7 +59,6 @@ wss.on('connection', ws => {
                     players: lobbies[lobbyCode].players.map(p => ({ name: p.name }))
                 }));
 
-                currentLobby = lobbyCode;
                 break;
 
             case 'joinLobby':
@@ -73,13 +74,13 @@ wss.on('connection', ws => {
                         return;
                     }
 
-                    // Add new player
                     existingPlayers.push({
                         socket: ws,
-                        name: data.playerName
+                        name: data.playerName,
+                        lobby: data.code // Speichere Lobby-Referenz
                     });
 
-                    currentLobby = data.code; // Set currentLobby for the joining player
+                    ws.lobbyCode = data.code; // Setze den Lobby-Code im WebSocket
 
                     existingPlayers.forEach(player => {
                         player.socket.send(JSON.stringify({
@@ -103,7 +104,13 @@ wss.on('connection', ws => {
                 break;
 
             case 'startGame':
-                if (lobbies[currentLobby] && lobbies[currentLobby].players.length === 2 && !lobbies[currentLobby].gameStarted && !puzzles[currentLobby].completed) {
+                const currentLobby = ws.lobbyCode;
+                if (
+                    lobbies[currentLobby] &&
+                    lobbies[currentLobby].players.length === 2 &&
+                    !lobbies[currentLobby].gameStarted &&
+                    !puzzles[currentLobby].completed
+                ) {
                     lobbies[currentLobby].gameStarted = true;
 
                     const puzzle = generatePuzzle(currentLobby);
@@ -111,48 +118,41 @@ wss.on('connection', ws => {
                     lobbies[currentLobby].players.forEach(player => {
                         player.socket.send(JSON.stringify({ action: 'gameStarted', puzzle }));
                     });
-                }else{
-                    console.log('Ka');
                 }
                 break;
 
             case 'move':
-                if (lobbies[currentLobby] && lobbies[currentLobby].gameStarted) {
-                    puzzles[currentLobby].puzzle = data.puzzle;
-                    syncPuzzleToPlayers(currentLobby);
-                    checkIfSolved(currentLobby);
+                const moveLobby = ws.lobbyCode;
+                if (lobbies[moveLobby] && lobbies[moveLobby].gameStarted) {
+                    puzzles[moveLobby].puzzle = data.puzzle;
+                    syncPuzzleToPlayers(moveLobby);
+                    checkIfSolved(moveLobby);
                 }
                 break;
 
             case 'puzzleSolved':
-                puzzles[currentLobby].completed = true;
-                lobbies[currentLobby].players.forEach(player => {
+                const solvedLobby = ws.lobbyCode;
+                puzzles[solvedLobby].completed = true;
+                lobbies[solvedLobby].players.forEach(player => {
                     player.socket.send(JSON.stringify({ action: 'gameOver' }));
                 });
-                puzzles[currentLobby].completed = false;
-                lobbies[currentLobby].gameStarted = false;
-                puzzles[currentLobby].puzzle = [];
-                console.log(puzzles[currentLobby].tilesize)
-                console.log(puzzles[currentLobby].size)
-
+                puzzles[solvedLobby].completed = false;
+                lobbies[solvedLobby].gameStarted = false;
+                puzzles[solvedLobby].puzzle = [];
                 break;
+
             case 'leaveLobby':
-                handleLeaveLobby(ws, data.code, data.playerName);
+                const leaveLobby = ws.lobbyCode;
+                handleLeaveLobby(ws, leaveLobby, data.playerName);
                 break;
         }
     });
 
     ws.on('close', () => {
         console.log('Player disconnected.');
-        if (currentLobby && lobbies[currentLobby]) {
-            lobbies[currentLobby].players = lobbies[currentLobby].players.filter(player => player !== ws);
-
-            if (lobbies[currentLobby].players.length === 0) {
-                delete lobbies[currentLobby];
-                delete puzzles[currentLobby];
-            } else {
-                syncPuzzleToPlayers(currentLobby);
-            }
+        const disconnectLobby = ws.lobbyCode;
+        if (disconnectLobby && lobbies[disconnectLobby]) {
+            handleLeaveLobby(ws, disconnectLobby);
         }
     });
 });
@@ -161,11 +161,10 @@ function generatePuzzle(currentLobby) {
     if (!puzzles[currentLobby]) {
         throw new Error(`Puzzle data for lobby ${currentLobby} not found.`);
     }
-console.log('generatePuzzle');
+
     let size = puzzles[currentLobby].size;
     let tilesize = puzzles[currentLobby].tilesize;
-    console.log(size)
-    console.log(tilesize)
+
     createPuzzle(size, tilesize, currentLobby);
 
     do {
@@ -182,7 +181,7 @@ function createPuzzle(size, tilesize, currentLobby) {
             position: i,
             x: (getCol(i, size) - 1) * tilesize,
             y: (getRow(i, size) - 1) * tilesize,
-            disabled: i === size * size,
+            disabled: i === size * size
         });
     }
 }
@@ -196,7 +195,6 @@ function randomizePuzzle(size, currentLobby) {
     do {
         randomValues = getRandomValues(size);
 
-        // Assign random values to the puzzle
         let i = 0;
         for (let puzzleItem of puzzle) {
             puzzleItem.value = randomValues[i];
@@ -204,7 +202,7 @@ function randomizePuzzle(size, currentLobby) {
             i++;
         }
 
-        const emptyPuzzle = puzzle.find((item) => item.value === size * size);
+        const emptyPuzzle = puzzle.find(item => item.value === size * size);
         emptyPuzzle.disabled = true;
 
         correctTileCount = countCorrectTiles(currentLobby);
@@ -213,7 +211,7 @@ function randomizePuzzle(size, currentLobby) {
 
 function isPuzzleValid(size, currentLobby) {
     let inversions = 0;
-    const values = puzzles[currentLobby].puzzle.map((item) => item.value);
+    const values = puzzles[currentLobby].puzzle.map(item => item.value);
 
     for (let i = 0; i < values.length; i++) {
         for (let j = i + 1; j < values.length; j++) {
@@ -225,7 +223,7 @@ function isPuzzleValid(size, currentLobby) {
 }
 
 function validateEmptyPuzzle(currentLobby) {
-    return puzzles[currentLobby].puzzle.filter((item) => item.disabled).length === 1;
+    return puzzles[currentLobby].puzzle.filter(item => item.disabled).length === 1;
 }
 
 function syncPuzzleToPlayers(lobbyCode) {
@@ -269,7 +267,7 @@ function handleLeaveLobby(socket, lobbyCode, playerName) {
     if (lobbies[lobbyCode]) {
         console.log(`Lobby ${lobbyCode} found.`);
         const initialPlayerCount = lobbies[lobbyCode].players.length;
-        lobbies[lobbyCode].players = lobbies[lobbyCode].players.filter(player => player.socket !== socket && player.name !== playerName);
+        lobbies[lobbyCode].players = lobbies[lobbyCode].players.filter(player => player.socket !== socket);
         const finalPlayerCount = lobbies[lobbyCode].players.length;
 
         console.log(`Initial player count: ${initialPlayerCount}, Final player count: ${finalPlayerCount}`);
@@ -283,6 +281,7 @@ function handleLeaveLobby(socket, lobbyCode, playerName) {
                 player.socket.send(JSON.stringify({ action: 'updatePlayerList', players: lobbies[lobbyCode].players.map(p => ({ name: p.name })) }));
             });
         }
+
         socket.send(JSON.stringify({ action: 'leftLobby' }));
     } else {
         console.log(`Lobby ${lobbyCode} not found.`);

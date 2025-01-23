@@ -124,11 +124,12 @@ wss.on('connection', ws => {
                 break;
 
             case 'puzzleSolved':
-                console.log('Puzzle solved');
                 puzzles[currentLobby].completed = true;
                 lobbies[currentLobby].players.forEach(player => {
                     player.socket.send(JSON.stringify({ action: 'gameOver' }));
                 });
+                puzzles[currentLobby].completed = false;
+                puzzles[currentLobby].gameStarted = false;
                 break;
         }
     });

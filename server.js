@@ -62,10 +62,15 @@ wss.on('connection', ws => {
                 break;
 
             case 'joinLobby':
+                if (!lobbies[data.code]) {
+                    ws.send(JSON.stringify({
+                        action: 'lobbyNotFound'
+                    }));
+                    return;
+                }
                 if (lobbies[data.code] && lobbies[data.code].players.length < 2) {
                     const existingPlayers = lobbies[data.code].players;
 
-                    // Check if player with this name already exists
                     if (existingPlayers.some(p => p.name === data.playerName)) {
                         ws.send(JSON.stringify({
                             action: 'error',

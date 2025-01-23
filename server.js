@@ -132,6 +132,7 @@ wss.on('connection', ws => {
                 });
                 puzzles[currentLobby].completed = false;
                 lobbies[currentLobby].gameStarted = false;
+                puzzles[currentLobby].puzzle = [];
 
                 break;
         }

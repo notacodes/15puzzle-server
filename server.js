@@ -10,7 +10,7 @@ const server = http.createServer((req, res) => {
         res.end('Not Found');
     }
 });
-
+//test
 const wss = new WebSocket.Server({ server });
 
 let lobbies = {};
@@ -66,7 +66,7 @@ wss.on('connection', ws => {
                     }));
                     return;
                 }
-                if (lobbies[data.code] && lobbies[data.code].players.length < 2) {
+                if (lobbies[data.code] && lobbies[data.code].players.length < 10) {
                     const existingPlayers = lobbies[data.code].players;
 
                     if (existingPlayers.some(p => p.name === data.playerName)) {
@@ -107,17 +107,17 @@ wss.on('connection', ws => {
                 break;
 
             case 'startGame':
+                console.log('Starting game...');
                 const currentLobby = ws.lobbyCode;
                 if (
                     lobbies[currentLobby] &&
-                    lobbies[currentLobby].players.length === 2 &&
+                    lobbies[currentLobby].players.length >= 2 && lobbies[currentLobby].players.length < 10 &&
                     !lobbies[currentLobby].gameStarted &&
                     !puzzles[currentLobby].completed
                 ) {
                     lobbies[currentLobby].gameStarted = true;
-
                     const puzzle = generatePuzzle(currentLobby);
-
+                    console.log('Game....');
                     lobbies[currentLobby].players.forEach(player => {
                         player.socket.send(JSON.stringify({ action: 'gameStarted', puzzle }));
                     });
@@ -292,7 +292,7 @@ function handleLeaveLobby(socket, lobbyCode, playerName) {
             lobby.host = newHost.name; // Der erste verbleibende Spieler wird neuer Host
 
             // Informiere den neuen Host
-            newHost.socket.send(JSON.stringify({ action: 'newHost' }));
+            newHost.socket.send(JSON.stringify({ action: 'newHost',lobbyCode: lobbyCode }));
         }
 
         // Aktualisiere die Spielerliste für alle verbleibenden Spieler

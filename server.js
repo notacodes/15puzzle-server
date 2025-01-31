@@ -10,7 +10,7 @@ const server = http.createServer((req, res) => {
         res.end('Not Found');
     }
 });
-//test
+
 const wss = new WebSocket.Server({ server });
 
 let lobbies = {};
@@ -36,7 +36,7 @@ wss.on('connection', ws => {
                     players: [{
                         socket: ws,
                         name: playerName,
-                        lobby: lobbyCode // Speichere Lobby-Code im Spielerobjekt
+                        lobby: lobbyCode
                     }],
                     gameStarted: false
                 };
@@ -48,7 +48,7 @@ wss.on('connection', ws => {
                     completed: false
                 };
 
-                ws.lobbyCode = lobbyCode; // Speichere den Lobby-Code im WebSocket
+                ws.lobbyCode = lobbyCode;
 
                 ws.send(JSON.stringify({
                     action: 'lobbyCreated',
@@ -80,7 +80,7 @@ wss.on('connection', ws => {
                     existingPlayers.push({
                         socket: ws,
                         name: data.playerName,
-                        lobby: data.code // Speichere Lobby-Referenz
+                        lobby: data.code
                     });
 
                     ws.lobbyCode = data.code;
@@ -276,26 +276,21 @@ function handleLeaveLobby(socket, lobbyCode, playerName) {
     const lobby = lobbies[lobbyCode];
     const players = lobby.players;
 
-    // Entferne den Spieler aus der Lobby
     lobby.players = players.filter(player => player.socket !== socket);
 
     if (lobby.players.length === 0) {
-        // Wenn die Lobby leer ist, löschen
         delete lobbies[lobbyCode];
         delete puzzles[lobbyCode];
         console.log(`Lobby ${lobbyCode} deleted.`);
     } else {
-        // Überprüfen, ob der Host gegangen ist
         if (lobby.host === playerName) {
             console.log(`${playerName} was the host. Selecting a new host.`);
             const newHost = lobby.players[0];
-            lobby.host = newHost.name; // Der erste verbleibende Spieler wird neuer Host
+            lobby.host = newHost.name;
 
-            // Informiere den neuen Host
             newHost.socket.send(JSON.stringify({ action: 'newHost',lobbyCode: lobbyCode }));
         }
 
-        // Aktualisiere die Spielerliste für alle verbleibenden Spieler
         lobby.players.forEach(player => {
             player.socket.send(JSON.stringify({
                 action: 'updatePlayerList',
@@ -305,7 +300,6 @@ function handleLeaveLobby(socket, lobbyCode, playerName) {
         });
     }
 
-    // Bestätigung an den Spieler, der die Lobby verlässt
     socket.send(JSON.stringify({ action: 'leftLobby' }));
 }
 function removePlayerFromAllLobbies(socket) {
